@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>MatrixLab Pro — Operazioni & Spazi Vettoriali</title>
+
+<!-- font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+<!-- math.js -->
+<script src="https://cdn.jsdelivr.net/npm/mathjs@11.8.0/lib/browser/math.js"></script>
+<!-- KaTeX for nice math rendering -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {delimiters:[{left:'$$', right:'$$', display:true},{left:'$', right:'$', display:false}]});"></script>
+
+<style>
+:root{
+  --bg:#f7fbff; --card:#ffffff; --muted:#234; --accent:#0b63d6; --accent-2:#0a4fb2;
+  --glass: rgba(255,255,255,0.8); --border: rgba(11,99,214,0.12);
+}
+*{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;transition:all .18s}
+body{margin:0;background:linear-gradient(180deg,#f2f8ff,#ffffff);color:var(--muted);padding:28px}
+.header{max-width:1200px;margin:0 auto 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.title{display:flex;flex-direction:column}
+.title h1{margin:0;font-size:1.4rem}
+.subtitle{color:var(--accent);font-weight:600;margin-top:6px}
+.container{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 420px;gap:22px}
+@media (max-width:980px){.container{grid-template-columns:1fr}}
+.card{background:var(--card);border-radius:14px;padding:18px;box-shadow:0 10px 30px rgba(11,63,120,0.06);border:1px solid var(--border)}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+label{font-size:0.92rem;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+input[type=number], input[type=text], select, textarea{padding:8px 10px;border-radius:8px;border:1px solid rgba(11,63,214,0.06);background:var(--glass);color:var(--muted)}
+.small{width:84px}
+.btn{padding:10px 12px;border-radius:10px;border:0;cursor:pointer;font-weight:700}
+.btn-primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:white}
+.btn-ghost{background:transparent;border:1px solid rgba(11,63,214,0.06);color:var(--muted)}
+.grid-matrices{display:flex;gap:12px;flex-wrap:wrap}
+.matrix-card{min-width:220px;background:linear-gradient(180deg,rgba(255,255,255,0.6),rgba(245,250,255,0.8));padding:12px;border-radius:10px;border:1px solid rgba(11,63,214,0.06)}
+.matrix-label{font-weight:700;color:var(--accent);margin-bottom:8px}
+.matrix-table{border-collapse:collapse}
+.matrix-table td{padding:6px;border:1px solid rgba(11,63,214,0.06)}
+.cell{width:66px;padding:6px;border-radius:6px;border:1px solid rgba(11,63,214,0.06);background:transparent;text-align:center}
+.results{max-height:72vh;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:12px}
+.step{background:linear-gradient(180deg, rgba(11,63,214,0.03), transparent);border-radius:10px;padding:10px;border:1px solid rgba(11,63,214,0.04)}
+.step-title{font-weight:700;color:var(--accent);margin-bottom:8px}
+pre.matrix{font-family:monospace;white-space:pre;overflow:auto;background:transparent;margin:0;color:var(--muted);font-size:0.95rem}
+.katex-block{background:transparent;padding:6px}
+.info{padding:8px;border-radius:8px;background:rgba(11,99,214,0.06);color:var(--accent);font-weight:600}
+.warning{padding:8px;border-radius:8px;background:rgba(239,68,68,0.06);color:#c02a2a;font-weight:700}
+.footer{margin-top:16px;text-align:center;color:#6a7ea6}
+ul.clean{padding-left:18px;margin:0}
+.badge{display:inline-block;padding:6px 8px;border-radius:999px;background:linear-gradient(90deg,#e6f0ff,#dbe9ff);color:var(--accent);font-weight:700;margin-left:8px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title">
+    <h1>MatrixLab Pro</h1>
+    <div class="subtitle">Operazioni su matrici, vettori e analisi dello spazio vettoriale — tema bianco/blu</div>
+  </div>
+  <div class="badge">V1 — Passaggi dettagliati</div>
+</div>
+
+<div class="container">
+  <!-- LEFT: controls + matrices -->
+  <section class="card">
+    <div class="controls">
+      <label>Righe <input id="rows" type="number" min="1" max="8" value="3" class="small"></label>
+      <label>Colonne <input id="cols" type="number" min="1" max="8" value="3" class="small"></label>
+
+      <label>Operazione:
+        <select id="operation">
+          <!-- operations involving 1 matrix -->
+          <optgroup label="Monomatriciali">
+            <option value="transpose">Trasposta (Aᵀ)</option>
+            <option value="determinant">Determinante (det A)</option>
+            <option value="inverse">Inversa (A⁻¹)</option>
+            <option value="rank">Rango (rank A)</option>
+            <option value="nullspace">Nucleo / Nullspace (Ker A)</option>
+            <option value="colspace">Spazio colonna (Col A)</option>
+            <option value="analyze">Analisi completa (tipo, rango, spazio vettoriale)</option>
+          </optgroup>
+          <!-- operations needing two matrices -->
+          <optgroup label="Bimatriciali">
+            <option value="sum">Somma (A + B)</option>
+            <option value="sub">Differenza (A - B)</option>
+            <option value="product">Prodotto (A · B)</option>
+            <option value="elemMul">Moltiplicazione elemento-per-elemento (A ∘ B)</option>
+          </optgroup>
+          <!-- vector / system -->
+          <optgroup label="Vettori / Sistemi">
+            <option value="solve">Risolvi sistema Ax = b (Rouché–Capelli)</option>
+            <option value="scalarMul">Moltiplicazione scalare (c · A / c · v)</option>
+            <option value="dot">Prodotto scalare vettori (u · v)</option>
+          </optgroup>
+        </select>
+      </label>
+
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button id="create" class="btn btn-ghost">Crea / Aggiorna</button>
+        <button id="calc" class="btn btn-primary">Esegui & Mostra passaggi</button>
+      </div>
+    </div>
+
+    <div style="margin-top:10px;color:#264d9a;font-weight:700">Inserisci matrici e vettori</div>
+
+    <div id="matrices-area" style="margin-top:12px">
+      <!-- dynamic content: matrices A, B, vector b, scalar -->
+    </div>
+
+    <div style="margin-top:12px">
+      <small class="info">Suggerimento: per vettori inserisci una matrice colonna (n×1). Per sistemi Ax=b, assicurati che A sia n×n o n×m e b abbia n righe.</small>
+    </div>
+  </section>
+
+  <!-- RIGHT: results & steps -->
+  <aside class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div><strong>Risultati & Passaggi</strong><div style="font-size:0.9rem;color:#4370c9">Mostra ogni operazione elementare</div></div>
+      <div style="font-size:0.85rem;color:#4b6fb5">Formato numerico: 4 decimali</div>
+    </div>
+    <div id="results" class="results">
+      <div class="step"><div class="step-title">Pronto</div><div>Configura matrici e operazione, poi clicca <strong>Esegui</strong>.</div></div>
+    </div>
+  </aside>
+</div>
+
+<div class="footer">MatrixLab Pro — mostra dettagli operativi, Rouché–Capelli e spazi vettoriali</div>
+
+<script>
+/* ===== utilità UI per costruire matrici e vettori dinamicamente ===== */
+
+const matricesArea = document.getElementById('matrices-area');
+const opSelect = document.getElementById('operation');
+const rowsInput = document.getElementById('rows');
+const colsInput = document.getElementById('cols');
+const createBtn = document.getElementById('create');
+const calcBtn = document.getElementById('calc');
+const resultsDiv = document.getElementById('results');
+
+function el(tag, props={}, children=[]){ const e=document.createElement(tag); Object.assign(e,props); (Array.isArray(children)?children:[children]).forEach(c=>{ if(typeof c === 'string') e.insertAdjacentHTML('beforeend', c); else if(c) e.appendChild(c); }); return e; }
+
+function createMatrixCard(id,label,r,c,defaultIdentity=false){
+  const card = el('div',{className:'matrix-card', id:id+'-card'});
+  card.appendChild(el('div',{className:'matrix-label'}, label));
+  const table = el('table',{className:'matrix-table', id:id});
+  for(let i=0;i<r;i++){
+    const tr = el('tr');
+    for(let j=0;j<c;j++){
+      const td = el('td');
+      const val = defaultIdentity && i===j? 1 : 0;
+      const input = el('input',{type:'text',value:String(val),className:'cell'});
+      td.appendChild(input); tr.appendChild(td);
+    }
+    table.appendChild(tr);
+  }
+  card.appendChild(table);
+  return card;
+}
+
+function createVectorCard(id,label,n){
+  return createMatrixCard(id,label,n,1,false);
+}
+
+function renderMatrixArea(){
+  matricesArea.innerHTML='';
+  const r = Math.max(1,Math.min(8,parseInt(rowsInput.value)||1));
+  const c = Math.max(1,Math.min(8,parseInt(colsInput.value)||1));
+  const op = opSelect.value;
+
+  // decide quali input mostrare in base all'operazione
+  const needsTwo = ['sum','sub','product','elemMul'].includes(op);
+  const needsVector = (op === 'solve' || op === 'dot');
+  const needsScalar = (op === 'scalarMul');
+
+  // Matrix A
+  matricesArea.appendChild(createMatrixCard('A','Matrice A',r,c,true));
+
+  // Matrix B if needed
+  if(needsTwo){
+    matricesArea.appendChild(createMatrixCard('B','Matrice B',r,c,false));
+  }
+
+  // Vector b for systems or dot product
+  if(needsVector){
+    // if dot product: two vectors u and v of size r (row vectors) — we show as column vectors
+    if(op === 'dot'){
+      matricesArea.appendChild(createVectorCard('u','Vettore u',r));
+      matricesArea.appendChild(createVectorCard('v','Vettore v',r));
+    } else {
+      matricesArea.appendChild(createVectorCard('b','Vettore b (RHS)',r));
+    }
+  }
+
+  // scalar input
+  if(needsScalar){
+    const scalarDiv = el('div',{style:'margin-top:10px'});
+    scalarDiv.appendChild(el('label',{}, 'Valore scalare c: '));
+    const inp = el('input',{id:'scalar','type':'text','value':'2'});
+    scalarDiv.appendChild(inp);
+    matricesArea.appendChild(scalarDiv);
+  }
+
+  // extra explanation area
+  const explain = el('div',{style:'margin-top:10px'}, `<div class="info">Operazione selezionata: <strong>${op}</strong></div>`);
+  matricesArea.appendChild(explain);
+}
+
+opSelect.addEventListener('change', ()=>{ renderMatrixArea(); clearResults(); });
+createBtn.addEventListener('click', ()=>{ renderMatrixArea(); clearResults(); });
+
+/* ===== funzioni di parsing / conversione ===== */
+
+function parseCell(x){
+  // accept fractions (like 3/4), decimals, negative
+  x = String(x).trim();
+  if(x === '') return 0;
+  if(x.includes('/')){
+    const p = x.split('/');
+    const n = parseFloat(p[0]); const d = parseFloat(p[1]);
+    if(isFinite(n) && isFinite(d) && d !== 0) return n/d;
+  }
+  const v = parseFloat(x);
+  return isFinite(v) ? v : 0;
+}
+
+function readMatrixById(id){
+  const table = document.getElementById(id);
+  if(!table) return null;
+  const M = [];
+  for(let i=0;i<table.rows.length;i++){
+    const row = [];
+    for(let j=0;j<table.rows[i].cells.length;j++){
+      const val = table.rows[i].cells[j].querySelector('input').value;
+      row.push(parseCell(val));
+    }
+    M.push(row);
+  }
+  return M;
+}
+
+/* ===== numerical helpers & step-tracking Gauss-Jordan ===== */
+
+// deep copy
+function deepCopy(M){ return M.map(r => r.slice()); }
+
+// pretty-print matrix for results
+function matrixToString(M,dec=4){
+  return M.map(r => r.map(v => Number.isFinite(v) ? v.toFixed(dec).padStart(8) : String(v).padStart(8)).join(' ')).join('\n');
+}
+
+function showBlock(title, innerHTML){
+  const div = document.createElement('div');
+  div.className = 'step';
+  const t = document.createElement('div'); t.className='step-title'; t.textContent=title;
+  div.appendChild(t);
+  const c = document.createElement('div');
+  c.innerHTML = innerHTML;
+  div.appendChild(c);
+  resultsDiv.appendChild(div);
+}
+
+function clearResults(){ resultsDiv.innerHTML=''; }
+
+/* Gauss-Jordan numeric with step recording (for augmented matrices too)
+   Returns {rref, steps, pivotCols}
+*/
+function gaussJordanDetailedNumeric(matrix){
+  const A = deepCopy(matrix);
+  const m = A.length; const n = A[0].length;
+  const steps = [];
+  let row = 0;
+  const pivotCols = [];
+  for (let col = 0; col < n && row < m; col++){
+    // find pivot
+    let sel = -1;
+    for (let r = row; r < m; r++){
+      if (Math.abs(A[r][col]) > 1e-12){ sel = r; break; }
+    }
+    if(sel === -1) continue;
+    if(sel !== row){
+      [A[sel], A[row]] = [A[row], A[sel]];
+      steps.push({type:'swap', info:`Scambia riga ${row+1} <-> riga ${sel+1}`, mat: deepCopy(A)});
+    }
+    // normalize pivot
+    const pivot = A[row][col];
+    if(Math.abs(pivot - 1) > 1e-12){
+      for(let j = col; j < n; j++) A[row][j] = A[row][j] / pivot;
+      steps.push({type:'scale', info:`Dividi riga ${row+1} per ${pivot.toFixed(6)}`, mat: deepCopy(A)});
+    }
+    // eliminate other rows
+    for(let r = 0; r < m; r++){
+      if(r === row) continue;
+      const factor = A[r][col];
+      if(Math.abs(factor) > 1e-12){
+        for(let j = col; j < n; j++){
+          A[r][j] = A[r][j] - factor * A[row][j];
+        }
+        steps.push({type:'elim', info:`R${r+1} = R${r+1} - (${factor.toFixed(6)}) * R${row+1}`, mat: deepCopy(A)});
+      }
+    }
+    pivotCols.push(col);
+    row++;
+  }
+  return {rref: A, steps, pivotCols};
+}
+
+/* compute rank by reducing to row echelon (numerical) */
+function numericRank(A){
+  const M = deepCopy(A);
+  const m = M.length, n = M[0].length;
+  let r = 0;
+  for(let c=0;c<n && r<m;c++){
+    let sel = r;
+    for(let i=r;i<m;i++) if(Math.abs(M[i][c]) > Math.abs(M[sel][c])) sel = i;
+    if(Math.abs(M[sel][c]) < 1e-12) continue;
+    [M[r], M[sel]] = [M[sel], M[r]];
+    const pivot = M[r][c];
+    for(let j=c;j<n;j++) M[r][j] /= pivot;
+    for(let i=r+1;i<m;i++){
+      const f = M[i][c];
+      for(let j=c;j<n;j++) M[i][j] -= f * M[r][j];
+    }
+    r++;
+  }
+  return r;
+}
+
+/* Nullspace basis (numerical) via rref */
+function nullspaceBasis(A){
+  // A is m x n, compute rref and find free vars
+  const m = A.length, n = A[0].length;
+  // make copy
+  const M = deepCopy(A).map(r => r.slice());
+  // Gauss-Jordan to rref (simple)
+  let row = 0;
+  const pivotCols = [];
+  for(let col=0; col<n && row<m; col++){
+    let sel = -1;
+    for(let r=row;r<m;r++) if(Math.abs(M[r][col])>1e-12){ sel = r; break; }
+    if(sel === -1) continue;
+    [M[sel], M[row]] = [M[row], M[sel]];
+    const pivot = M[row][col];
+    for(let j=col;j<n;j++) M[row][j] /= pivot;
+    for(let r=0;r<m;r++) if(r!==row){
+      const fac = M[r][col];
+      for(let j=col;j<n;j++) M[r][j] -= fac * M[row][j];
+    }
+    pivotCols.push(col);
+    row++;
+  }
+  const freeCols = [];
+  for(let j=0;j<n;j++) if(!pivotCols.includes(j)) freeCols.push(j);
+  // construct basis vectors (n-dimensional)
+  const basis = [];
+  for(let f=0; f<freeCols.length; f++){
+    const fc = freeCols[f];
+    const vec = Array(n).fill(0);
+    vec[fc] = 1;
+    for(let i=0;i<pivotCols.length;i++){
+      const c = pivotCols[i]; // pivot col
+      // pivot row i corresponds to pivotCols[i]
+      // find row where pivot is c
+      let prow = null;
+      for(let r=0;r<m;r++) if(Math.abs(M[r][c]-1) < 1e-9 && Math.abs(M[r].slice(0,c).reduce((a,b)=>a+b,0)) < 1e-9) { prow = r; break;}
+      if(prow === null) {
+        // fallback: try row index i if in bounds
+        if(i < m) prow = i; else continue;
+      }
+      vec[c] =  - M[prow][fc];
+    }
+    basis.push(vec);
+  }
+  return {basis, freeCols, pivotCols};
+}
+
+/* Column space basis (by pivot columns of A) */
+function columnSpaceBasis(A){
+  const m = A.length, n = A[0].length;
+  // compute rref of A and keep track of pivot columns
+  const copy = deepCopy(A);
+  const rrefRes = gaussJordanDetailedNumeric(copy);
+  const pivotCols = rrefRes.pivotCols;
+  const basis = pivotCols.map(c => A.map(row => row[c])); // columns from original A
+  return {basis, pivotCols};
+}
+
+/* ===== operations using math.js where convenient ===== */
+
+function tryMathjsInv(A){
+  try {
+    return math.inv(A);
+  } catch(e){
+    return null;
+  }
+}
+
+/* ===== UI: execute operations and render steps/results ===== */
+
+function renderMatrixHTML(M){
+  return `<pre class="matrix">${matrixToString(M)}</pre>`;
+}
+
+function renderVectorHTML(v){
+  return `<pre class="matrix">${v.map(x=>Number.isFinite(x)?x.toFixed(4).padStart(8):String(x)).join('\n')}</pre>`;
+}
+
+// Main compute
+calcBtn.addEventListener('click', ()=>{
+  clearResults();
+  const op = opSelect.value;
+  const A = readMatrixById('A');
+  if(!A){ showBlock('Errore','Matrice A non disponibile'); return; }
+  const B = readMatrixById('B'); // maybe null
+  // safe checks
+  try {
+    if(['sum','sub','product','elemMul'].includes(op) && !B){ showBlock('Errore','Operazione richiede matrice B'); return; }
+    // Dispatch operations
+    if(op === 'transpose'){
+      showBlock('Matrice A (originale)', renderMatrixHTML(A));
+      const T = math.transpose(A);
+      showBlock('Trasposta Aᵀ', renderMatrixHTML(T));
+    }
+    else if(op === 'determinant'){
+      showBlock('Matrice A', renderMatrixHTML(A));
+      if(A.length !== A[0].length){ showBlock('Errore', '<div class="warning">La matrice non è quadrata: determinante non definito.</div>'); return; }
+      // compute via math.det (numeric)
+      const det = math.det(A);
+      showBlock('Calcolo determinante', `<div>det(A) ≈ <strong>${det.toFixed(8)}</strong></div>`);
+    }
+    else if(op === 'inverse'){
+      showBlock('Matrice A', renderMatrixHTML(A));
+      if(A.length !== A[0].length){ showBlock('Errore', '<div class="warning">La matrice non è quadrata: inversa non definita.</div>'); return; }
+      const inv = tryMathjsInv(A);
+      if(!inv){ showBlock('Errore','Matrice singolare (non invertibile) o errore numerico'); return; }
+      showBlock('Inversa A⁻¹', renderMatrixHTML(inv));
+      // verify A * A^-1 = I
+      const I = math.multiply(A, inv);
+      showBlock('Verifica A · A⁻¹ ≈ I', renderMatrixHTML(I));
+    }
+    else if(op === 'rank'){
+      showBlock('Matrice A', renderMatrixHTML(A));
+      const rnk = numericRank(A);
+      showBlock('Rango (rank)', `<div class="info">rank(A) = <strong>${rnk}</strong></div>`);
+    }
+    else if(op === 'nullspace'){
+      showBlock('Matrice A', renderMatrixHTML(A));
+      const ns = nullspaceBasis(A);
+      if(ns.basis.length === 0){
+        showBlock('Nullspace', `<div class="info">Solo la soluzione banale — Nullspace = {0} (dimensione 0)</div>`);
+      } else {
+        showBlock('Nullspace — base (soluzioni parametriche)', `<div>Variabili libere: ${ns.freeCols.join(', ')}</div>`);
+        ns.basis.forEach((v,i)=>{
+          showBlock(`Base n°${i+1}`, renderVectorHTML(v));
+        });
+      }
+    }
+    else if(op === 'colspace'){
+      showBlock('Matrice A', renderMatrixHTML(A));
+      const cs = columnSpaceBasis(A);
+      if(cs.basis.length === 0){ showBlock('Colonna spazio', `<div class="info">Colonna spazio è {0}</div>`);}
+      else {
+        showBlock('Colonna spazio - base (colonne pivot)', `<div>Pivot columns: ${cs.pivotCols.join(', ')}</div>`);
+        cs.basis.forEach((col,i)=> showBlock(`Vettore base colonna ${cs.pivotCols[i]}`, renderVectorHTML(col)));
+      }
+    }
+    else if(op === 'analyze'){
+      showBlock('Matrice A', renderMatrixHTML(A));
+      const rnk = numericRank(A);
+      const dims = `${A.length} × ${A[0].length}`;
+      const square = (A.length === A[0].length);
+      const det = (square ? math.det(A) : null);
+      showBlock('Analisi', `<ul class="clean">
+        <li>Dimensione: ${dims}</li>
+        <li>Quadrata: ${square ? 'Sì' : 'No'}</li>
+        <li>Rango: <strong>${rnk}</strong></li>
+        <li>Determinante: ${det !== null ? det.toFixed(6) : '—'}</li>
+        <li>Spazio vettoriale: M<sub>${A.length}×${A[0].length}</sub>(ℝ)</li>
+      </ul>`);
+      // column space + nullspace summary
+      const cs = columnSpaceBasis(A);
+      const ns = nullspaceBasis(A);
+      showBlock('Spazi associati', `<div>Dimensione Colonna: ${cs.basis.length} — Dimensione Nullspace: ${ns.basis.length}</div>`);
+    }
+    else if(op === 'sum' || op === 'sub'){
+      showBlock('Matrice A', renderMatrixHTML(A));
+      showBlock('Matrice B', renderMatrixHTML(B));
+      // check dims
+      if(A.length !== B.length || A[0].length !== B[0].length){ showBlock('Errore','Le matrici devono avere la stessa dimensione per somma/sottrazione'); return; }
+      const R = A.map((row,i) => row.map((v,j) => (op==='sum')? v + B[i][j] : v - B[i][j]));
+      showBlock(op==='sum' ? 'A + B' : 'A - B', renderMatrixHTML(R));
+      // show per-element steps (compact)
+      const steps = [];
+      for(let i=0;i<A.length;i++){
+        for(let j=0;j<A[0].length;j++){
+          steps.push(`(${i+1},${j+1}): ${A[i][j].toFixed(4)} ${op==='sum'?'+':'-'} ${B[i][j].toFixed(4)} = ${(op==='sum'? A[i][j] + B[i][j] : A[i][j] - B[i][j]).toFixed(4)}`);
+        }
+      }
+      steps.forEach((s,i)=> showBlock(`Passo elemento ${i+1}`, `<div>${s}</div>`));
+    }
+    else if(op === 'product'){
+      showBlock('Matrice A', renderMatrixHTML(A));
+      showBlock('Matrice B', renderMatrixHTML(B));
+      if(A[0].length !== B.length){ showBlock('Errore','Numero di colonne di A deve essere uguale al numero di righe di B per il prodotto'); return; }
+      // multiply with element steps
+      const r = A.length, c = B[0].length, n = B.length;
+      const R = Array.from({length:r},()=>Array(c).fill(0));
+      for(let i=0;i<r;i++){
+        for(let j=0;j<c;j++){
+          let sum = 0;
+          let expr = '';
+          for(let k=0;k<n;k++){
+            expr += `${A[i][k].toFixed(4)}×${B[k][j].toFixed(4)}${k<n-1?' + ' : ''}`;
+            sum += A[i][k]*B[k][j];
+          }
+          R[i][j] = sum;
+          showBlock(`Calcolo elemento [${i+1},${j+1}]`, `<div>${expr} = <strong>${sum.toFixed(6)}</strong></div>`);
+        }
+      }
+      showBlock('Risultato A · B', renderMatrixHTML(R));
+    }
+    else if(op === 'elemMul'){
+      showBlock('Matrice A', renderMatrixHTML(A));
+      showBlock('Matrice B', renderMatrixHTML(B));
+      if(A.length !== B.length || A[0].length !== B[0].length){ showBlock('Errore','Dimensione mismatch per moltiplicazione elemento-per-elemento'); return; }
+      const R = A.map((row,i)=>row.map((v,j)=>v * B[i][j]));
+      showBlock('Risultato (A ∘ B)', renderMatrixHTML(R));
+    }
+    else if(op === 'solve'){
+      // read b vector
+      const b = readMatrixById('b');
+      showBlock('Matrice A', renderMatrixHTML(A));
+      showBlock('Vettore b', renderVectorHTML(b.map(r=>r[0])));
+      // Form augmented matrix [A | b]
+      if(b.length !== A.length){ showBlock('Errore','Dimensione di b incompatibile con A'); return; }
+      const aug = A.map((row,i)=> row.concat([b[i][0]]));
+      showBlock('Matrice aumentata [A|b] iniziale', `<pre class="matrix">${matrixToString(aug)}</pre>`);
+      const gj = gaussJordanDetailedNumeric(aug);
+      // show steps
+      gj.steps.forEach((s,i)=> showBlock(`Passo ${i+1}: ${s.info}`, `<pre class="matrix">${matrixToString(s.mat)}</pre>`));
+      showBlock('RREF finale', `<pre class="matrix">${matrixToString(gj.rref)}</pre>`);
+      // analyze Rouché–Capelli
+      const m = gj.rref.length; const n = gj.rref[0].length; const vars = n-1;
+      // check inconsistency
+      for(let i=0;i<m;i++){
+        let leftZero = true;
+        for(let j=0;j<vars;j++) if(Math.abs(gj.rref[i][j]) > 1e-12) { leftZero = false; break; }
+        if(leftZero && Math.abs(gj.rref[i][n-1]) > 1e-12){
+          showBlock('Analisi Rouché–Capelli', `<div class="warning">Sistema incompatibile — riga 0 = b con 0 = ${gj.rref[i][n-1].toFixed(4)}</div>`);
+          return;
+        }
+      }
+      // rank of A
+      const Aonly = A.map(row => row.slice());
+      const rankA = numericRank(Aonly);
+      // rank of augmented
+      const rankAug = numericRank(aug);
+      showBlock('Rouché–Capelli', `<div>rank(A) = ${rankA} ; rank([A|b]) = ${rankAug} ; numero incognite = ${vars}</div>`);
+      if(rankA === rankAug && rankA === vars){
+        // unique solution: read solution from RREF (since in reduced echelon)
+        const sol = Array(vars).fill(0);
+        for(let i=0;i<gj.pivotCols.length;i++){
+          const c = gj.pivotCols[i];
+          if(c < vars) sol[c] = gj.rref[i][vars];
+        }
+        let html = '<div class="success">Soluzione unica:</div>';
+        sol.forEach((val,i)=> html += `<div>x_${i+1} = <strong>${val.toFixed(6)}</strong></div>`);
+        showBlock('Soluzione', html);
+      } else if(rankA === rankAug && rankA < vars){
+        // infinite solutions — express in parameters
+        // compute nullspace of A to express general solution x = x_part + sum t_i * v_i
+        const ns = nullspaceBasis(Aonly);
+        // find a particular solution by setting free vars zero and reading pivot vars from rref
+        const particular = Array(vars).fill(0);
+        for(let i=0;i<gj.pivotCols.length;i++){
+          const c = gj.pivotCols[i];
+          if(c < vars) particular[c] = gj.rref[i][vars];
+        }
+        // render
+        let html = '<div class="success">Soluzioni infinite — forma parametrica:</div>';
+        html += `<div>Particolare x_p = [${particular.map(v=>v.toFixed(4)).join(', ')}]</div>`;
+        if(ns.basis.length === 0){
+          html += '<div>Nullspace vuoto (strano)</div>';
+        } else {
+          ns.basis.forEach((v,i)=> html += `<div>v_${i+1} = [${v.map(x=>x.toFixed(4)).join(', ')}]</div>`);
+        }
+        showBlock('Soluzioni', html);
+      } else {
+        showBlock('Analisi', `<div class="warning">Situazione imprevista: verifica dati</div>`);
+      }
+    }
+    else if(op === 'scalarMul'){
+      const cInput = document.getElementById('scalar');
+      const c = cInput ? parseCell(cInput.value) : 1;
+      showBlock('Matrice A', renderMatrixHTML(A));
+      const R = A.map(row => row.map(v => v * c));
+      showBlock(`Risultato c·A con c=${c}`, renderMatrixHTML(R));
+    }
+    else if(op === 'dot'){
+      const u = readMatrixById('u');
+      const v = readMatrixById('v');
+      if(!u || !v){ showBlock('Errore','Inserisci vettori u e v'); return; }
+      if(u.length !== v.length){ showBlock('Errore','Dimensione vettori mismatch'); return; }
+      const dot = u.reduce((s,row,i) => s + row[0] * v[i][0], 0);
+      showBlock('Vettore u', renderVectorHTML(u.map(r=>r[0])));
+      showBlock('Vettore v', renderVectorHTML(v.map(r=>r[0])));
+      showBlock('Prodotto scalare', `<div class="info">u · v = <strong>${dot.toFixed(6)}</strong></div>`);
+    }
+    else {
+      showBlock('Errore','Operazione non implementata al momento');
+    }
+
+    // re-render KaTeX (for any LaTeX displayed)
+    if(window.renderMathInElement) {
+      try { renderMathInElement(resultsDiv, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]}); } catch(e){}
+    }
+  } catch(err){
+    showBlock('Errore runtime', `<div class="warning">${err.message}</div>`);
+  }
+});
+
+/* init */
+renderMatrixArea();
+
+</script>
+</body>
+</html>
